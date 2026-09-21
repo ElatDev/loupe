@@ -6,6 +6,12 @@
 #define _CRT_SECURE_NO_WARNINGS /* getenv */
 #endif
 
+/* fileno() is POSIX, not C11, so a strict -std=c11 build does not see it
+ * declared in <stdio.h>. Must precede every include to take effect. */
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "term.h"
 
 #include <stdlib.h>
