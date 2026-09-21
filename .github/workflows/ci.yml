@@ -1,0 +1,70 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (gcc, clang, sanitizers, fuzzing)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build with gcc (-Wall -Wextra -Werror)
+        run: make CC=gcc
+
+      - name: Build with clang (-Wall -Wextra -Werror)
+        run: make clean && make CC=clang
+
+      - name: Unit tests (ASan, UBSan, LeakSanitizer)
+        run: make test CC=clang
+
+      - name: Parse every ELF binary on the runner
+        run: |
+          make asan CC=clang
+          find /usr/bin /usr/sbin /bin /usr/lib /lib -type f 2>/dev/null \
+            | ./build/asan/loupe --batch | tee sweep.txt
+          grep -q "no leaks" sweep.txt
+
+      - name: Differential test against readelf
+        run: |
+          make
+          python3 scripts/diff_readelf.py --dir /usr/lib/x86_64-linux-gnu --limit 400
+
+      - name: Mutation fuzzing (50,000 runs)
+        run: |
+          make mutate CC=clang
+          ./build/fuzz/mutate --runs 50000 $(find /usr/bin -type f -size -2M | head -20)
+
+      - name: libFuzzer (2 minutes)
+        run: |
+          make fuzz CC=clang
+          mkdir -p corpus
+          find /usr/bin /usr/lib/x86_64-linux-gnu -type f -size -200k 2>/dev/null \
+            | head -30 | xargs -I{} cp {} corpus/
+          ./build/fuzz/fuzz_loupe corpus -max_total_time=120 -max_len=65536 \
+            -timeout=10 -print_final_stats=1
+
+  windows:
+    name: Windows (MSVC, ASan, System32)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build with MSVC (/W4 /WX)
+        run: .\build.bat release
+
+      - name: Unit tests (AddressSanitizer)
+        run: .\build.bat test
+
+      - name: Parse every file in System32
+        run: |
+          .\build.bat asan
+          .\scripts\sweep.ps1 | Tee-Object -FilePath sweep.txt
+          if (-not (Select-String -Path sweep.txt -Pattern "no leaks")) { exit 1 }
+
+      - name: Differential test against dumpbin
+        run: python scripts\diff_dumpbin.py --dir C:\Windows\System32 --limit 600

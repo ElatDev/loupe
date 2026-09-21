@@ -1,0 +1,65 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.bat",
+            "args": ["release"],
+            "windows": { "options": { "shell": { "executable": "cmd.exe", "args": ["/c"] } } },
+            "linux": { "command": "make", "args": [] },
+            "osx": { "command": "make", "args": [] },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$msCompile", "$gcc"],
+            "presentation": { "reveal": "always", "panel": "shared", "clear": true }
+        },
+        {
+            "label": "build (debug)",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.bat",
+            "args": ["debug"],
+            "windows": { "options": { "shell": { "executable": "cmd.exe", "args": ["/c"] } } },
+            "linux": { "command": "make", "args": ["CFLAGS=-O0 -g"] },
+            "group": "build",
+            "problemMatcher": ["$msCompile", "$gcc"]
+        },
+        {
+            "label": "build (AddressSanitizer)",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.bat",
+            "args": ["asan"],
+            "windows": { "options": { "shell": { "executable": "cmd.exe", "args": ["/c"] } } },
+            "linux": { "command": "make", "args": ["asan"] },
+            "group": "build",
+            "problemMatcher": ["$msCompile", "$gcc"]
+        },
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "${workspaceFolder}/build.bat",
+            "args": ["test"],
+            "windows": { "options": { "shell": { "executable": "cmd.exe", "args": ["/c"] } } },
+            "linux": { "command": "make", "args": ["test"] },
+            "group": { "kind": "test", "isDefault": true },
+            "problemMatcher": ["$msCompile", "$gcc"]
+        },
+        {
+            "label": "sweep System32",
+            "type": "shell",
+            "command": "powershell",
+            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/sweep.ps1"],
+            "dependsOn": "build (AddressSanitizer)",
+            "problemMatcher": []
+        },
+        {
+            "label": "run on this file",
+            "type": "shell",
+            "command": "${workspaceFolder}/build/loupe.exe",
+            "args": ["-a", "--color=always", "${file}"],
+            "linux": { "command": "${workspaceFolder}/build/loupe" },
+            "osx": { "command": "${workspaceFolder}/build/loupe" },
+            "dependsOn": "build",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+build/
+corpus/
+docs/*.html
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.lib
+*.exp
+loupe
+crash-*
+leak-*
+timeout-*
+slow-unit-*
+__pycache__/
+*.pyc

@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "*.h": "c",
+        "*.c": "c"
+    },
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "editor.rulers": [96],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "C_Cpp.default.cStandard": "c11",
+    "C_Cpp.default.includePath": ["${workspaceFolder}/src"],
+    "search.exclude": {
+        "build/**": true
+    }
+}
