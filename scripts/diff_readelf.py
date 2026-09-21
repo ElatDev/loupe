@@ -53,9 +53,12 @@ SEGMENT_RE = re.compile(
     r"^\s+(?P<type>\S+)\s+0x(?P<off>[0-9a-f]+)\s+0x(?P<vaddr>[0-9a-f]+)\s+"
     r"0x(?P<paddr>[0-9a-f]+)\s+0x(?P<filesz>[0-9a-f]+)\s+0x(?P<memsz>[0-9a-f]+)\s+"
     r"(?P<flags>[RWE ]{1,3})\s+0x(?P<align>[0-9a-f]+)\s*$")
+# readelf prints a symbol's size in decimal, but switches to hex once it no
+# longer fits the column - which only shows up on very large objects, so the
+# whole line silently failed to parse and the symbol looked absent.
 SYM_RE = re.compile(
-    r"^\s*(?P<num>\d+):\s+(?P<value>[0-9a-f]+)\s+(?P<size>\d+)\s+(?P<type>\S+)\s+"
-    r"(?P<bind>\S+)\s+(?P<vis>\S+)\s+(?P<ndx>\S+)\s*(?P<name>.*?)\s*$")
+    r"^\s*(?P<num>\d+):\s+(?P<value>[0-9a-f]+)\s+(?P<size>0x[0-9a-fA-F]+|\d+)\s+"
+    r"(?P<type>\S+)\s+(?P<bind>\S+)\s+(?P<vis>\S+)\s+(?P<ndx>\S+)\s*(?P<name>.*?)\s*$")
 NEEDED_RE = re.compile(r"\(NEEDED\).*\[(?P<lib>[^\]]*)\]")
 
 
@@ -98,7 +101,7 @@ def parse_readelf(text: str):
             m = SYM_RE.match(line)
             if m and m.group("type") != "Type":
                 syms[int(m.group("num"))] = (
-                    int(m.group("value"), 16), int(m.group("size")), m.group("type"),
+                    int(m.group("value"), 16), int(m.group("size"), 0), m.group("type"),
                     m.group("bind"), m.group("ndx"), m.group("name"))
     return sections, segments, needed, syms
 
