@@ -125,12 +125,23 @@ TYPE_ALIASES = {
     "UNIQUE": "GNU_UNIQUE",
 }
 
+# readelf writes a versioned symbol as "dlerror@GLIBC_2.34 (2)", where the
+# trailing number is the symbol's index in the version table rather than part
+# of its name. Loupe prints the version and leaves the index out. Same category
+# as the aliases above: a spelling difference, not a disagreement.
+VERSION_INDEX_RE = re.compile(r"\s+\(\d+\)$")
+
+
+def norm_name(name: str) -> str:
+    return VERSION_INDEX_RE.sub("", name)
+
 
 def same_symbol(a, b) -> bool:
     va, sa, ta, ba, na, nma = a
     vb, sb, tb, bb, nb, nmb = b
     ta, tb = TYPE_ALIASES.get(ta, ta), TYPE_ALIASES.get(tb, tb)
     ba, bb = TYPE_ALIASES.get(ba, ba), TYPE_ALIASES.get(bb, bb)
+    nma, nmb = norm_name(nma), norm_name(nmb)
     return (va, sa, ta, ba, na, nma) == (vb, sb, tb, bb, nb, nmb)
 
 
