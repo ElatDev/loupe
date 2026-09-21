@@ -1202,6 +1202,13 @@ static void versioned_name(const lp_str *name, const symver *v, char *out, size_
         return;
     }
     lp_esc(&v->name, b, sizeof b);
+    /* A version-definition marker carries the version string as its own name:
+     * glibc defines GLIBC_2.2.5 as an ABS OBJECT symbol. Appending the version
+     * would print GLIBC_2.2.5@@GLIBC_2.2.5. readelf prints the name alone. */
+    if (strcmp(a, b) == 0) {
+        snprintf(out, n, "%s", a);
+        return;
+    }
     snprintf(out, n, "%s%s%s", a, (v->needed || v->hidden) ? "@" : "@@", b);
 }
 
